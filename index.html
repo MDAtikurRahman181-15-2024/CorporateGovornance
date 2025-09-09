@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>কর্পোরেট ম্যানেজমেন্ট প্রস্তুতি</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Bengali:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Calm Study -->
+    <!-- Application Structure Plan: The SPA is designed as a single-page vertical scroller with a sticky sidebar navigation for quick access to the 8 key topics. This structure is ideal for educational material and exam preparation, allowing users to easily jump between subjects without losing context. The flow is user-driven; they can study topics in any order. Interactivity is introduced through clickable cards, simple diagrams, and new Gemini API features (case study/question generation, TTS) to make learning more engaging and effective than a static document. -->
+    <!-- Visualization & Content Choices:
+        - Report Info: Board of Directors composition. Goal: Inform/Organize. Viz: Doughnut Chart (Chart.js/Canvas). Interaction: Hover for tooltips showing director types. Justification: A doughnut chart is excellent for showing parts of a whole, making the board's composition instantly clear.
+        - Report Info: Management functions. Goal: Compare/Inform. Viz: Radar Chart (Chart.js/Canvas). Interaction: Hover over points to see function names and importance scores. Justification: A radar chart effectively compares multiple quantitative variables, ideal for showing the balanced importance of various management functions.
+        - Report Info: Recruitment Process. Goal: Organize. Viz: Step-by-step diagram (HTML/CSS). Interaction: Clicking a step highlights it and shows descriptive text. Justification: A visual process flow is much easier to follow and remember than a simple text list.
+        - Gemini Feature: Case Study Generation. Goal: Apply/Understand. Viz: Text in Modal. Interaction: Button click triggers API call. Justification: Connects theoretical management styles to practical, real-world examples.
+        - Gemini Feature: Interview Question Generation. Goal: Apply/Prepare. Viz: Text in Modal. Interaction: Button click. Justification: Provides practical, exam-oriented content based on the curriculum's skill requirements.
+        - Gemini Feature: Text-to-Speech. Goal: Accessibility/Inform. Viz: Audio playback. Interaction: Speaker icon click. Justification: Caters to different learning styles and enhances accessibility. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Sans Bengali', sans-serif;
+            background-color: #FDFBF7;
+            color: #333D45;
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+            border-right: 4px solid transparent;
+        }
+        .nav-link.active {
+            background-color: #E9E4DB;
+            color: #A47748;
+            border-right-color: #A47748;
+            transform: translateX(-2px);
+        }
+        .content-card {
+            background-color: #FFFFFF;
+            border: 1px solid #E9E4DB;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .interactive-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .interactive-card:hover {
+           transform: translateY(-5px);
+           box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+        .step-item.active .step-circle {
+            background-color: #A47748;
+            color: white;
+            border-color: #A47748;
+        }
+        .step-item.active .step-title {
+            color: #A47748;
+            font-weight: 700;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 450px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        .gemini-btn {
+            background-color: #A47748;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        .gemini-btn:hover {
+            background-color: #8e653a;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #A47748;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-[#FDFBF7]">
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <aside class="w-full md:w-64 lg:w-72 bg-[#F6F3EE] p-4 md:p-6 sticky top-0 h-screen-calc md:h-screen overflow-y-auto border-r border-[#E9E4DB]">
+            <h1 class="text-2xl font-bold text-[#A47748] mb-8">কর্পোরেট ম্যানেজমেন্ট</h1>
+            <nav id="navigation" class="flex flex-col space-y-2">
+                <a href="#topic1" class="nav-link p-3 rounded-l-lg text-base font-medium">১. মালিকানা ও ব্যবস্থাপনা</a>
+                <a href="#topic2" class="nav-link p-3 rounded-l-lg text-base font-medium">২. ব্যবস্থাপনার পদ্ধতি</a>
+                <a href="#topic3" class="nav-link p-3 rounded-l-lg text-base font-medium">৩. বোর্ড অফ ডিরেক্টরস</a>
+                <a href="#topic4" class="nav-link p-3 rounded-l-lg text-base font-medium">৪. প্রতিষ্ঠানের আকার</a>
+                <a href="#topic5" class="nav-link p-3 rounded-l-lg text-base font-medium">৫. যোগ্যতা</a>
+                <a href="#topic6" class="nav-link p-3 rounded-l-lg text-base font-medium">৬. নিয়োগ পদ্ধতি</a>
+                <a href="#topic7" class="nav-link p-3 rounded-l-lg text-base font-medium">৭. কার্যাবলি</a>
+                <a href="#topic8" class="nav-link p-3 rounded-l-lg text-base font-medium">৮. ক্ষমতা</a>
+            </nav>
+        </aside>
+
+        <main class="w-full p-4 md:p-8 lg:p-12 overflow-y-auto">
+            <header class="mb-12">
+                <h2 class="text-4xl font-bold text-[#333D45] mb-2">কর্পোরেট ম্যানেজমেন্ট স্টাডি গাইড</h2>
+                <p class="text-lg text-gray-600">পরীক্ষার প্রস্তুতির জন্য প্রতিটি বিষয় বিস্তারিতভাবে দেখুন, শুনুন এবং জেনারেট করুন।</p>
+            </header>
+
+            <section id="topic1" class="mb-16 scroll-mt-24">
+                <div class="content-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-2xl font-bold text-[#A47748]">১. মালিকানা ও পেশাদার ব্যবস্থাপনার পৃথকীকরণ</h3>
+                        <button id="tts-btn-1" class="ml-4 text-gray-500 hover:text-[#A47748] text-2xl" onclick="playSectionAudio('topic1')">🔊</button>
+                    </div>
+                    <div id="topic1-content">
+                        <p class="mb-6 text-gray-700">আধুনিক কর্পোরেট কাঠামোতে, কোম্পানির মালিক (শেয়ারহোল্ডার) এবং যারা কোম্পানি পরিচালনা করেন (ব্যবস্থাপক) তারা সাধারণত ভিন্ন ভিন্ন ব্যক্তি হন। এই পৃথকীকরণ কর্পোরেট শাসনের একটি মূল ভিত্তি, যা দক্ষতা এবং জবাবদিহিতা বৃদ্ধি করে।</p>
+                        <div class="grid md:grid-cols-2 gap-6 text-center">
+                            <div class="bg-[#F6F3EE] p-6 rounded-lg border border-[#E9E4DB]">
+                                <h4 class="text-lg font-bold mb-2">মালিক (শেয়ারহোল্ডার)</h4>
+                                <p class="text-sm">✓ মূলধন সরবরাহ করে</p>
+                                <p class="text-sm">✓ কোম্পানির আংশিক মালিক</p>
+                                <p class="text-sm">✓ লভ্যাংশ গ্রহণ করে</p>
+                                <p class="text-sm">✓ বোর্ড অফ ডিরেক্টরস নির্বাচন করে</p>
+                            </div>
+                            <div class="bg-[#F6F3EE] p-6 rounded-lg border border-[#E9E4DB]">
+                                <h4 class="text-lg font-bold mb-2">পেশাদার ব্যবস্থাপক</h4>
+                                <p class="text-sm">✓ দৈনন্দিন কার্যক্রম পরিচালনা করে</p>
+                                <p class="text-sm">✓ কৌশলগত সিদ্ধান্ত গ্রহণ করে</p>
+                                <p class="text-sm">✓ বোর্ডের কাছে দায়বদ্ধ থাকে</p>
+                                <p class="text-sm">✓ দক্ষতার জন্য বেতনভুক্ত</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="topic2" class="mb-16 scroll-mt-24">
+                <div class="content-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-2xl font-bold text-[#A47748]">২. কর্পোরেট ব্যবস্থাপনার পদ্ধতি</h3>
+                        <button id="tts-btn-2" class="ml-4 text-gray-500 hover:text-[#A47748] text-2xl" onclick="playSectionAudio('topic2')">🔊</button>
+                    </div>
+                    <div id="topic2-content">
+                        <p class="mb-6 text-gray-700">কর্পোরেট ব্যবস্থাপনার বিভিন্ন পদ্ধতি বা শৈলী রয়েছে। প্রতিষ্ঠানের সংস্কৃতি, আকার এবং শিল্পের উপর ভিত্তি করে উপযুক্ত পদ্ধতি বেছে নেওয়া হয়। কার্ডগুলিতে ক্লিক করে বিস্তারিত জানুন।</p>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="interactive-card flex flex-col justify-between p-6 rounded-lg border bg-[#F6F3EE]">
+                            <div>
+                                <h4 class="text-lg font-bold mb-2">একনায়কতান্ত্রিক (Autocratic)</h4>
+                                <p class="text-sm">কেন্দ্রীয়ভাবে সিদ্ধান্ত গ্রহণ, কর্মীদের মতামত কম।</p>
+                            </div>
+                            <button class="gemini-btn mt-4 text-sm" onclick="generateCaseStudy('একনায়কতান্ত্রিক')">✨ কেস স্টাডি</button>
+                        </div>
+                        <div class="interactive-card flex flex-col justify-between p-6 rounded-lg border bg-[#F6F3EE]">
+                            <div>
+                                <h4 class="text-lg font-bold mb-2">গণতান্ত্রিক (Democratic)</h4>
+                                <p class="text-sm">সিদ্ধান্ত গ্রহণে কর্মীদের অংশগ্রহণ থাকে।</p>
+                            </div>
+                            <button class="gemini-btn mt-4 text-sm" onclick="generateCaseStudy('গণতান্ত্রিক')">✨ কেস স্টাডি</button>
+                        </div>
+                        <div class="interactive-card flex flex-col justify-between p-6 rounded-lg border bg-[#F6F3EE]">
+                            <div>
+                                <h4 class="text-lg font-bold mb-2">অবাধ (Laissez-faire)</h4>
+                                <p class="text-sm">কর্মীদের পূর্ণ স্বাধীনতা দেওয়া হয়।</p>
+                            </div>
+                            <button class="gemini-btn mt-4 text-sm" onclick="generateCaseStudy('অবাধ')">✨ কেস স্টাডি</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="topic3" class="mb-16 scroll-mt-24">
+                <div class="content-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-2xl font-bold text-[#A47748]">৩. বোর্ড অফ ডিরেক্টরস (পরিচালনা পর্ষদ)</h3>
+                         <button id="tts-btn-3" class="ml-4 text-gray-500 hover:text-[#A47748] text-2xl" onclick="playSectionAudio('topic3')">🔊</button>
+                    </div>
+                    <div id="topic3-content">
+                        <p class="mb-6 text-gray-700">বোর্ড অফ ডিরেক্টরস শেয়ারহোল্ডারদের প্রতিনিধি হিসেবে কাজ করে এবং কোম্পানির সামগ্রিক দিকনির্দেশনা ও তত্ত্বাবধানের জন্য দায়ী থাকে। এটি ব্যবস্থাপনা এবং মালিকদের মধ্যে একটি সেতু হিসাবে কাজ করে।</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                            <div>
+                                <h4 class="text-lg font-semibold mb-3">বোর্ডের গঠন</h4>
+                                <p class="text-gray-600 mb-4">বোর্ডে সাধারণত নির্বাহী (Executive) এবং অ-নির্বাহী (Non-Executive) পরিচালকদের সমন্বয় থাকে। একটি ভারসাম্যপূর্ণ বোর্ড কার্যকর শাসনের জন্য অপরিহার্য।</p>
+                                <ul class="space-y-2 text-sm">
+                                    <li><span class="font-bold">নির্বাহী পরিচালক:</span> কোম্পানির বেতনভুক্ত কর্মকর্তা, যেমন CEO, CFO।</li>
+                                    <li><span class="font-bold">অ-নির্বাহী পরিচালক:</span> কোম্পানির বাইরের স্বাধীন বিশেষজ্ঞ।</li>
+                                    <li><span class="font-bold">চেয়ারম্যান:</span> বোর্ডের প্রধান, যিনি সভা পরিচালনা করেন।</li>
+                                </ul>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="boardCompositionChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="topic4" class="mb-16 scroll-mt-24">
+                <div class="content-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-2xl font-bold text-[#A47748]">৪. প্রতিষ্ঠানের আকার ও ব্যবস্থাপনা কাঠামো</h3>
+                        <button id="tts-btn-4" class="ml-4 text-gray-500 hover:text-[#A47748] text-2xl" onclick="playSectionAudio('topic4')">🔊</button>
+                    </div>
+                     <div id="topic4-content">
+                        <p class="mb-6 text-gray-700">প্রতিষ্ঠানের আকার তার ব্যবস্থাপনা কাঠামোর উপর সরাসরি প্রভাব ফেলে। ছোট প্রতিষ্ঠানের কাঠামো সরল হলেও, বড় প্রতিষ্ঠানের কাঠামো জটিল এবং বহুস্তরবিশিষ্ট হয়।</p>
+                         <div class="flex flex-col md:flex-row gap-6">
+                            <div class="w-full md:w-1/3 text-center p-4 bg-blue-50 rounded-lg">
+                                <h4 class="font-bold text-blue-800">ছোট প্রতিষ্ঠান</h4>
+                                <p class="text-sm text-blue-700">কেন্দ্রীয় ব্যবস্থাপনা, কম আনুষ্ঠানিকতা।</p>
+                            </div>
+                            <div class="w-full md:w-1/3 text-center p-4 bg-green-50 rounded-lg">
+                                 <h4 class="font-bold text-green-800">মাঝারি প্রতিষ্ঠান</h4>
+                                 <p class="text-sm text-green-700">বিভাগীয়করণ শুরু হয়, একাধিক ব্যবস্থাপক।</p>
+                            </div>
+                            <div class="w-full md:w-1/3 text-center p-4 bg-purple-50 rounded-lg">
+                                 <h4 class="font-bold text-purple-800">বৃহৎ প্রতিষ্ঠান</h4>
+                                 <p class="text-sm text-purple-700">জটিল হায়ারার্কি, বিকেন্দ্রীভূত সিদ্ধান্ত।</p>
+                            </div>
+                         </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="topic5" class="mb-16 scroll-mt-24">
+                <div class="content-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-2xl font-bold text-[#A47748]">৫. কর্পোরেট ম্যানেজমেন্ট এর যোগ্যতা</h3>
+                        <button id="tts-btn-5" class="ml-4 text-gray-500 hover:text-[#A47748] text-2xl" onclick="playSectionAudio('topic5')">🔊</button>
+                    </div>
+                    <div id="topic5-content">
+                        <p class="mb-6 text-gray-700">সফল কর্পোরেট ব্যবস্থাপকদের বিভিন্ন ধরণের যোগ্যতা এবং দক্ষতার প্রয়োজন হয়। এগুলিকে প্রধানত তিনটি ভাগে ভাগ করা যায়:</p>
+                        <ul class="space-y-4">
+                            <li>
+                                <p><strong class="text-gray-800">১. ধারণাগত দক্ষতা (Conceptual Skills):</strong> সামগ্রিক চিত্র বোঝা, কৌশলগত পরিকল্পনা এবং জটিল সমস্যা সমাধানের ক্ষমতা।</p>
+                            </li>
+                            <li>
+                                <p><strong class="text-gray-800">২. মানবীয় দক্ষতা (Human Skills):</strong> দল পরিচালনা, যোগাযোগ স্থাপন এবং অন্যদের অনুপ্রাণিত করার ক্ষমতা।</p>
+                            </li>
+                            <li>
+                                <p><strong class="text-gray-800">৩. প্রযুক্তিগত দক্ষতা (Technical Skills):</strong> নির্দিষ্ট কাজ বা প্রক্রিয়া সম্পর্কে বিশেষ জ্ঞান এবং দক্ষতা।</p>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="mt-8 text-center">
+                        <button class="gemini-btn" onclick="generateInterviewQuestions()">✨ চাকরির ইন্টারভিউ প্রশ্ন তৈরি করুন</button>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="topic6" class="mb-16 scroll-mt-24">
+                <div class="content-card">
+                     <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-2xl font-bold text-[#A47748]">৬. কর্পোরেট ম্যানেজমেন্ট এর নিয়োগ পদ্ধতি</h3>
+                        <button id="tts-btn-6" class="ml-4 text-gray-500 hover:text-[#A47748] text-2xl" onclick="playSectionAudio('topic6')">🔊</button>
+                    </div>
+                    <div id="topic6-content">
+                        <p class="mb-6 text-gray-700">সঠিক ব্যবস্থাপক নিয়োগ একটি গুরুত্বপূর্ণ প্রক্রিয়া। এটি সাধারণত কয়েকটি ধারাবাহিক ধাপে সম্পন্ন হয়। যেকোনো একটি ধাপে ক্লিক করে তার সম্পর্কে জানুন।</p>
+                        <div class="flex flex-col md:flex-row gap-8">
+                            <div id="recruitment-process" class="relative md:w-1/2">
+                                <div class="absolute left-4 top-0 h-full w-0.5 bg-[#E9E4DB]"></div>
+                                <div class="step-item relative mb-8 pl-12 cursor-pointer active" onclick="showStepDetails(this, 'step-detail-1')">
+                                    <div class="step-circle absolute left-0 top-1 w-8 h-8 rounded-full border-2 border-[#E9E4DB] bg-white flex items-center justify-center font-bold">1</div>
+                                    <h4 class="step-title font-semibold text-lg">চাহিদা নির্ধারণ</h4>
+                                </div>
+                                <div class="step-item relative mb-8 pl-12 cursor-pointer" onclick="showStepDetails(this, 'step-detail-2')">
+                                    <div class="step-circle absolute left-0 top-1 w-8 h-8 rounded-full border-2 border-[#E9E4DB] bg-white flex items-center justify-center font-bold">2</div>
+                                    <h4 class="step-title font-semibold text-lg">আবেদন আহ্বান</h4>
+                                </div>
+                                 <div class="step-item relative mb-8 pl-12 cursor-pointer" onclick="showStepDetails(this, 'step-detail-3')">
+                                    <div class="step-circle absolute left-0 top-1 w-8 h-8 rounded-full border-2 border-[#E9E4DB] bg-white flex items-center justify-center font-bold">3</div>
+                                    <h4 class="step-title font-semibold text-lg">বাছাই ও সাক্ষাৎকার</h4>
+                                </div>
+                                <div class="step-item relative mb-8 pl-12 cursor-pointer" onclick="showStepDetails(this, 'step-detail-4')">
+                                    <div class="step-circle absolute left-0 top-1 w-8 h-8 rounded-full border-2 border-[#E9E4DB] bg-white flex items-center justify-center font-bold">4</div>
+                                    <h4 class="step-title font-semibold text-lg">চূড়ান্ত নির্বাচন ও নিয়োগ</h4>
+                                </div>
+                            </div>
+                            <div id="step-details" class="mt-6 md:mt-0 p-4 bg-[#F6F3EE] rounded-lg md:w-1/2 h-fit">
+                                <p id="step-detail-1" class="step-detail-text">প্রতিষ্ঠানের লক্ষ্য অর্জনের জন্য কোন পদে, কী যোগ্যতার ব্যবস্থাপক প্রয়োজন তা বিশ্লেষণ করা হয়।</p>
+                                <p id="step-detail-2" class="step-detail-text hidden">বিজ্ঞাপন, হেডহান্টিং বা অভ্যন্তরীণ পদোন্নতির মাধ্যমে যোগ্য প্রার্থীদের কাছ থেকে আবেদন চাওয়া হয়।</p>
+                                <p id="step-detail-3" class="step-detail-text hidden">আবেদনপত্র যাচাই, পরীক্ষা এবং একাধিক সাক্ষাৎকারের মাধ্যমে সবচেয়ে উপযুক্ত প্রার্থী খুঁজে বের করা হয়।</p>
+                                <p id="step-detail-4" class="step-detail-text hidden">সাক্ষাৎকারে উত্তীর্ণ প্রার্থীর রেফারেন্স চেক করে এবং বেতন-ভাতা নির্ধারণ করে নিয়োগপত্র দেওয়া হয়।</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="topic7" class="mb-16 scroll-mt-24">
+                <div class="content-card">
+                     <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-2xl font-bold text-[#A47748]">৭. কর্পোরেট ম্যানেজমেন্ট এর কার্যাবলি</h3>
+                        <button id="tts-btn-7" class="ml-4 text-gray-500 hover:text-[#A47748] text-2xl" onclick="playSectionAudio('topic7')">🔊</button>
+                    </div>
+                    <div id="topic7-content">
+                        <p class="mb-6 text-gray-700">ব্যবস্থাপনার কার্যাবলি পরস্পর সম্পর্কযুক্ত এবং চক্রাকারে চলতে থাকে। এই কাজগুলো দক্ষতার সাথে সম্পাদনের উপরই প্রতিষ্ঠানের সাফল্য নির্ভর করে।</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                            <div class="order-2 md:order-1">
+                                <ul class="space-y-3">
+                                    <li><strong>পরিকল্পনা (Planning):</strong> লক্ষ্য নির্ধারণ এবং তা অর্জনের জন্য কর্মপন্থা তৈরি করা।</li>
+                                    <li><strong>সংগঠন (Organizing):</strong> সম্পদ ও কর্মীদের منظم করা এবং দায়িত্ব বণ্টন করা।</li>
+                                    <li><strong>কর্মীসংস্থান (Staffing):</strong> সঠিক কর্মীর নিয়োগ, প্রশিক্ষণ ও উন্নয়ন নিশ্চিত করা।</li>
+                                    <li><strong>নির্দেশনা (Directing):</strong> কর্মীদের নেতৃত্ব দেওয়া, অনুপ্রাণিত করা এবং যোগাযোগ রক্ষা করা।</li>
+                                    <li><strong>সমন্বয় (Coordinating):</strong> বিভিন্ন বিভাগের কাজের মধ্যে সামঞ্জস্য বিধান করা।</li>
+                                    <li><strong>নিয়ন্ত্রণ (Controlling):</strong> পরিকল্পনা অনুযায়ী কাজ হচ্ছে কিনা তা পর্যবেক্ষণ ও মূল্যায়ন করা।</li>
+                                </ul>
+                            </div>
+                            <div class="chart-container order-1 md:order-2">
+                                 <canvas id="functionsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="topic8" class="scroll-mt-24">
+                <div class="content-card">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-2xl font-bold text-[#A47748]">৮. কর্পোরেট ব্যবস্থাপনার ক্ষমতা</h3>
+                        <button id="tts-btn-8" class="ml-4 text-gray-500 hover:text-[#A47748] text-2xl" onclick="playSectionAudio('topic8')">🔊</button>
+                    </div>
+                    <div id="topic8-content">
+                        <p class="mb-6 text-gray-700">ব্যবস্থাপকদের তাদের দায়িত্ব পালনের জন্য নির্দিষ্ট ক্ষমতা বা কর্তৃত্ব প্রদান করা হয়। এই ক্ষমতা সাধারণত প্রতিষ্ঠানের নিয়মাবলী এবং আইন দ্বারা নির্ধারিত থাকে।</p>
+                         <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li><strong>পদমর্যাদাভিত্তিক ক্ষমতা (Legitimate Power):</strong> সাংগঠনিক পদ থেকে প্রাপ্ত ক্ষমতা।</li>
+                            <li><strong>পুরস্কার প্রদানের ক্ষমতা (Reward Power):</strong> কর্মীদের পুরস্কৃত করার ক্ষমতা।</li>
+                            <li><strong>শাস্তি প্রদানের ক্ষমতা (Coercive Power):</strong> নিয়ম ভঙ্গের জন্য কর্মীদের শাস্তি দেওয়ার ক্ষমতা।</li>
+                            <li><strong>বিশেষজ্ঞতার ক্ষমতা (Expert Power):</strong> বিশেষ জ্ঞান বা দক্ষতার কারণে অর্জিত ক্ষমতা।</li>
+                            <li><strong>ব্যক্তিত্বের ক্ষমতা (Referent Power):</strong> ব্যক্তিত্ব, charisma বা শ্রদ্ধার কারণে অর্জিত ক্ষমতা।</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Gemini Modal -->
+    <div id="gemini-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h4 id="modal-title" class="text-xl font-bold text-[#A47748]">জেনারেটেড কনটেন্ট</h4>
+                <button onclick="closeModal()" class="text-gray-500 hover:text-gray-800 text-2xl">&times;</button>
+            </div>
+            <div id="modal-content" class="p-6 overflow-y-auto">
+                <div id="loader" class="flex justify-center items-center h-48">
+                    <div class="loader"></div>
+                </div>
+                <div id="modal-text" class="text-gray-700 whitespace-pre-wrap" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="tts-audio" style="display: none;"></audio>
+
+    <script>
+        const API_KEY = ""; // Use "" for public models
+        const TEXT_MODEL = "gemini-2.5-flash-preview-05-20";
+        const TTS_MODEL = "gemini-2.5-flash-preview-tts";
+
+        let currentAudio = null;
+        let currentTTSButton = null;
+
+        function showModal(title) {
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('loader').style.display = 'flex';
+            document.getElementById('modal-text').style.display = 'none';
+            document.getElementById('gemini-modal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('gemini-modal').classList.add('hidden');
+        }
+
+        function displayModalContent(text) {
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('modal-text').innerText = text;
+            document.getElementById('modal-text').style.display = 'block';
+        }
+
+        function displayModalError(error) {
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('modal-text').innerText = `দুঃখিত, একটি সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।\nError: ${error}`;
+            document.getElementById('modal-text').style.display = 'block';
+        }
+
+        async function callGeminiApi(prompt, retries = 3, delay = 1000) {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${TEXT_MODEL}:generateContent?key=${API_KEY}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+            };
+            
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                         const errorBody = await response.json();
+                         throw new Error(`HTTP error! status: ${response.status}, message: ${errorBody.error.message}`);
+                    }
+                    
+                    const result = await response.json();
+                    if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0]) {
+                        return result.candidates[0].content.parts[0].text;
+                    } else {
+                        throw new Error('No content in response');
+                    }
+                } catch (error) {
+                    console.error(`Attempt ${i + 1} failed:`, error);
+                    if (i === retries - 1) throw error;
+                    await new Promise(res => setTimeout(res, delay * Math.pow(2, i)));
+                }
+            }
+        }
+
+        async function generateCaseStudy(style) {
+            showModal(`${style} ম্যানেজমেন্ট কেস স্টাডি`);
+            const prompt = `একজন ছাত্রের জন্য সহজে বোঝা যায় এমনভাবে "${style}" বা "${style}" কর্পোরেট ম্যানেজমেন্ট পদ্ধতির উপর একটি কাল্পনিক কোম্পানির সংক্ষিপ্ত কেস স্টাডি বাংলা ভাষায় তৈরি করুন।`;
+            try {
+                const result = await callGeminiApi(prompt);
+                displayModalContent(result);
+            } catch (error) {
+                displayModalError(error);
+            }
+        }
+
+        async function generateInterviewQuestions() {
+            showModal('ম্যানেজার পদের জন্য ইন্টারভিউ প্রশ্ন');
+            const skillsText = document.getElementById('topic5-content').innerText;
+            const prompt = `কর্পোরেট ম্যানেজমেন্টের জন্য প্রয়োজনীয় নিম্নলিখিত যোগ্যতাগুলির উপর ভিত্তি করে একজন ম্যানেজারের চাকরির ইন্টারভিউয়ের জন্য ৫টি গুরুত্বপূর্ণ প্রশ্ন বাংলা ভাষায় তৈরি করুন:\n\n${skillsText}`;
+            try {
+                const result = await callGeminiApi(prompt);
+                displayModalContent(result);
+            } catch (error) {
+                displayModalError(error);
+            }
+        }
+        
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function pcmToWav(pcmData, sampleRate) {
+            const numChannels = 1;
+            const bitsPerSample = 16;
+            const blockAlign = (numChannels * bitsPerSample) / 8;
+            const byteRate = sampleRate * blockAlign;
+            const dataSize = pcmData.byteLength;
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+
+            function writeString(view, offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + dataSize, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, byteRate, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitsPerSample, true);
+            writeString(view, 36, 'data');
+            view.setUint32(40, dataSize, true);
+
+            const pcm16 = new Int16Array(pcmData);
+            const wavBytes = new Int16Array(buffer, 44);
+            wavBytes.set(pcm16);
+
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+
+        async function generateAndPlayTTS(text, button) {
+             if (currentAudio && !currentAudio.paused) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+                if(currentTTSButton) currentTTSButton.innerHTML = '🔊';
+                if (currentTTSButton === button) {
+                    currentTTSButton = null;
+                    currentAudio = null;
+                    return;
+                }
+            }
+
+            button.innerHTML = '⏳';
+            currentTTSButton = button;
+            
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${API_KEY}`;
+            const payload = {
+                contents: [{ parts: [{ text: `Please say the following in Bengali: ${text}` }] }],
+                generationConfig: { responseModalities: ["AUDIO"] }
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+                const result = await response.json();
+                const audioData = result?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+                const mimeType = result?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.mimeType;
+
+                if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                    const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)[1], 10) || 24000;
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const wavBlob = pcmToWav(pcmData, sampleRate);
+                    const audioUrl = URL.createObjectURL(wavBlob);
+
+                    const audioPlayer = document.getElementById('tts-audio');
+                    audioPlayer.src = audioUrl;
+                    currentAudio = audioPlayer;
+
+                    audioPlayer.onplay = () => { button.innerHTML = '⏸️'; };
+                    audioPlayer.onpause = () => { button.innerHTML = '🔊'; };
+                    audioPlayer.onended = () => {
+                        button.innerHTML = '🔊';
+                        currentAudio = null;
+                        currentTTSButton = null;
+                    };
+                    
+                    audioPlayer.play();
+                } else {
+                     throw new Error('Invalid audio data received');
+                }
+            } catch (error) {
+                console.error('TTS Error:', error);
+                alert('দুঃখিত, অডিও প্লে করতে সমস্যা হয়েছে।');
+                button.innerHTML = '🔊';
+            }
+        }
+
+        function playSectionAudio(sectionId) {
+            const content = document.getElementById(`${sectionId}-content`).innerText;
+            const button = document.getElementById(`tts-btn-${sectionId.replace('topic', '')}`);
+            generateAndPlayTTS(content, button);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('#navigation a');
+
+            function changeActiveLink() {
+                let index = sections.length;
+                while(--index && window.scrollY + 100 < sections[index].offsetTop) {}
+                
+                navLinks.forEach((link) => link.classList.remove('active'));
+                if (navLinks[index]) {
+                    navLinks[index].classList.add('active');
+                }
+            }
+
+            changeActiveLink();
+            window.addEventListener('scroll', changeActiveLink);
+
+            navLinks.forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+            const boardCtx = document.getElementById('boardCompositionChart').getContext('2d');
+            new Chart(boardCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['অ-নির্বাহী পরিচালক', 'নির্বাহী পরিচালক', 'স্বাধীন পরিচালক'],
+                    datasets: [{
+                        label: 'বোর্ডের গঠন',
+                        data: [50, 25, 25],
+                        backgroundColor: [ '#A47748', '#333D45', '#E9E4DB' ],
+                        borderColor: '#FFFFFF',
+                        borderWidth: 4
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { fontFamily: "'Noto Sans Bengali', sans-serif", font: { size: 14 }}},
+                        tooltip: { callbacks: { label: (c) => `${c.label}: ${c.parsed}%` }}
+                    }
+                }
+            });
+
+            const functionsCtx = document.getElementById('functionsChart').getContext('2d');
+            new Chart(functionsCtx, {
+                type: 'radar',
+                data: {
+                    labels: ['পরিকল্পনা', 'সংগঠন', 'কর্মীসংস্থান', 'নির্দেশনা', 'সমন্বয়', 'নিয়ন্ত্রণ'],
+                    datasets: [{
+                        label: 'ব্যবস্থাপনার কার্যাবলির গুরুত্ব',
+                        data: [9, 8, 7, 9, 8, 7],
+                        backgroundColor: 'rgba(164, 119, 72, 0.2)',
+                        borderColor: '#A47748',
+                        pointBackgroundColor: '#A47748',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: '#A47748'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        r: {
+                            angleLines: { color: '#E9E4DB' },
+                            grid: { color: '#E9E4DB' },
+                            pointLabels: { font: { size: 13, family: "'Noto Sans Bengali', sans-serif" }, color: '#333D45' },
+                            ticks: { backdropColor: '#FDFBF7', color: '#A47748' }
+                        }
+                    }
+                }
+            });
+
+        });
+
+        function showStepDetails(selectedStep, detailId) {
+            document.querySelectorAll('.step-item').forEach(step => step.classList.remove('active'));
+            selectedStep.classList.add('active');
+
+            document.querySelectorAll('.step-detail-text').forEach(detail => detail.classList.add('hidden'));
+            document.getElementById(detailId).classList.remove('hidden');
+        }
+
+    </script>
+</body>
+</html>
+
