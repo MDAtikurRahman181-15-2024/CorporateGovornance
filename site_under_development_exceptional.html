@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Site Under Development</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #f0f0f0, #d9d9d9);
+            overflow: hidden;
+        }
+        .container {
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        h1 {
+            font-family: 'Arial', sans-serif;
+            color: #333;
+            animation: fadeIn 2s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .particle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            animation: moveParticle 5s infinite;
+        }
+        @keyframes moveParticle {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-100vh); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Site Under Development</h1>
+        <p>We are working hard to bring you a new experience. Stay tuned!</p>
+    </div>
+    <script>
+        // Particle system logic
+        for (let i = 0; i < 100; i++) {
+            const particle = document.createElement('div');
+            particle.classList.add('particle');
+            particle.style.left = Math.random() * 100 + 'vw';
+            particle.style.animationDelay = Math.random() * 5 + 's';
+            document.body.appendChild(particle);
+        }
+    </script>
+</body>
+</html>
